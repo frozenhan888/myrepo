@@ -5,7 +5,7 @@
       "_generator": {
         "name": "bicep",
         "version": "0.4.613.9944",
-        "templateHash": "14645738413971440377"
+        "templateHash": "9055763377870284445"
       }
     },
     "parameters": {
@@ -1735,7 +1735,7 @@
               "_generator": {
                 "name": "bicep",
                 "version": "0.4.613.9944",
-                "templateHash": "4579642614199511655"
+                "templateHash": "2587336424050217734"
               }
             },
             "parameters": {
@@ -2025,7 +2025,7 @@
               "_generator": {
                 "name": "bicep",
                 "version": "0.4.613.9944",
-                "templateHash": "4682323295724537596"
+                "templateHash": "7767679708356243486"
               }
             },
             "parameters": {
@@ -2061,7 +2061,154 @@
             "functions": [],
             "variables": {
               "keyvault001Name": "[format('{0}-vault001', parameters('prefix'))]"
-            }
+            },
+            "resources": [
+              {
+                "type": "Microsoft.Resources/deployments",
+                "apiVersion": "2019-10-01",
+                "name": "keyVault001",
+                "properties": {
+                  "expressionEvaluationOptions": {
+                    "scope": "inner"
+                  },
+                  "mode": "Incremental",
+                  "parameters": {
+                    "location": {
+                      "value": "[parameters('location')]"
+                    },
+                    "tags": {
+                      "value": "[parameters('tags')]"
+                    },
+                    "subnetId": {
+                      "value": "[parameters('subnetId')]"
+                    },
+                    "keyvaultName": {
+                      "value": "[variables('keyvault001Name')]"
+                    },
+                    "privateDnsZoneIdKeyVault": {
+                      "value": "[parameters('privateDnsZoneIdKeyVault')]"
+                    }
+                  },
+                  "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "metadata": {
+                      "_generator": {
+                        "name": "bicep",
+                        "version": "0.4.613.9944",
+                        "templateHash": "11855677596500727104"
+                      }
+                    },
+                    "parameters": {
+                      "location": {
+                        "type": "string"
+                      },
+                      "tags": {
+                        "type": "object"
+                      },
+                      "subnetId": {
+                        "type": "string"
+                      },
+                      "keyvaultName": {
+                        "type": "string"
+                      },
+                      "privateDnsZoneIdKeyVault": {
+                        "type": "string",
+                        "defaultValue": ""
+                      }
+                    },
+                    "functions": [],
+                    "variables": {
+                      "keyVaultPrivateEndpointName": "[format('{0}-private-endpoint', parameters('keyvaultName'))]"
+                    },
+                    "resources": [
+                      {
+                        "type": "Microsoft.KeyVault/vaults",
+                        "apiVersion": "2021-04-01-preview",
+                        "name": "[parameters('keyvaultName')]",
+                        "location": "[parameters('location')]",
+                        "tags": "[parameters('tags')]",
+                        "properties": {
+                          "accessPolicies": [],
+                          "createMode": "default",
+                          "enabledForDeployment": false,
+                          "enabledForDiskEncryption": false,
+                          "enabledForTemplateDeployment": false,
+                          "enablePurgeProtection": true,
+                          "enableRbacAuthorization": true,
+                          "enableSoftDelete": true,
+                          "networkAcls": {
+                            "bypass": "AzureServices",
+                            "defaultAction": "Deny",
+                            "ipRules": [],
+                            "virtualNetworkRules": []
+                          },
+                          "sku": {
+                            "family": "A",
+                            "name": "standard"
+                          },
+                          "softDeleteRetentionInDays": 7,
+                          "tenantId": "[subscription().tenantId]"
+                        }
+                      },
+                      {
+                        "type": "Microsoft.Network/privateEndpoints",
+                        "apiVersion": "2020-11-01",
+                        "name": "[variables('keyVaultPrivateEndpointName')]",
+                        "location": "[parameters('location')]",
+                        "tags": "[parameters('tags')]",
+                        "properties": {
+                          "manualPrivateLinkServiceConnections": [],
+                          "privateLinkServiceConnections": [
+                            {
+                              "name": "[variables('keyVaultPrivateEndpointName')]",
+                              "properties": {
+                                "groupIds": [
+                                  "vault"
+                                ],
+                                "privateLinkServiceId": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]",
+                                "requestMessage": ""
+                              }
+                            }
+                          ],
+                          "subnet": {
+                            "id": "[parameters('subnetId')]"
+                          }
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]"
+                        ]
+                      },
+                      {
+                        "condition": "[not(empty(parameters('privateDnsZoneIdKeyVault')))]",
+                        "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                        "apiVersion": "2020-11-01",
+                        "name": "[format('{0}/{1}', variables('keyVaultPrivateEndpointName'), 'default')]",
+                        "properties": {
+                          "privateDnsZoneConfigs": [
+                            {
+                              "name": "[format('{0}-arecord', variables('keyVaultPrivateEndpointName'))]",
+                              "properties": {
+                                "privateDnsZoneId": "[parameters('privateDnsZoneIdKeyVault')]"
+                              }
+                            }
+                          ]
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Network/privateEndpoints', variables('keyVaultPrivateEndpointName'))]"
+                        ]
+                      }
+                    ],
+                    "outputs": {
+                      "keyvaultId": {
+                        "type": "string",
+                        "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
           }
         },
         "dependsOn": [
