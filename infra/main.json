@@ -100,6 +100,20 @@
           "description": "Specifies the resource ID of the private DNS zone for Key Vault. Optional if `enableDnsAndFirewallDeployment` is set to `true`."
         }
       },
+      "privateDnsZoneIdPurview": {
+        "type": "string",
+        "defaultValue": "",
+        "metadata": {
+          "description": "Specifies the resource ID of the private DNS zone for Purview. Optional if `enableDnsAndFirewallDeployment` is set to `true`."
+        }
+      },
+      "privateDnsZoneIdPurviewPortal": {
+        "type": "string",
+        "defaultValue": "",
+        "metadata": {
+          "description": "Specifies the resource ID of the private DNS zone for Purview Portal. Optional if `enableDnsAndFirewallDeployment` is set to `true`."
+        }
+      },
       "privateDnsZoneIdQueue": {
         "type": "string",
         "defaultValue": "",
@@ -1777,6 +1791,8 @@
                 "privatelink.notebooks.azure.net",
                 "privatelink.pbidedicated.windows.net",
                 "privatelink.postgres.database.azure.com",
+                "privatelink.purview.azure.com",
+                "privatelink.purviewstudio.azure.com",
                 "[format('privatelink.queue.{0}', environment().suffixes.storage)]",
                 "privatelink.redis.cache.windows.net",
                 "privatelink.search.windows.net",
@@ -1918,6 +1934,14 @@
                 "type": "string",
                 "value": "[format('{0}/providers/Microsoft.Network/privateDnsZones/privatelink.eventgrid.azure.net', resourceGroup().id)]"
               },
+              "privateDnsZoneIdPurview": {
+                "type": "string",
+                "value": "[format('{0}/providers/Microsoft.Network/privateDnsZones/privatelink.purview.azure.com', resourceGroup().id)]"
+              },
+              "privateDnsZoneIdPurviewPortal": {
+                "type": "string",
+                "value": "[format('{0}/providers/Microsoft.Network/privateDnsZones/privatelink.purviewstudio.azure.com', resourceGroup().id)]"
+              },
               "privateDnsZoneIdDfs": {
                 "type": "string",
                 "value": "[format('{0}/providers/Microsoft.Network/privateDnsZones/privatelink.dfs.{1}', resourceGroup().id, environment().suffixes.storage)]"
@@ -2005,6 +2029,12 @@
             "subnetId": {
               "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('{0}-network', variables('name'))), 'Microsoft.Resources/deployments', 'networkServices'), '2019-10-01').outputs.serviceSubnet.value]"
             },
+            "privateDnsZoneIdPurview": {
+              "value": "[if(parameters('enableDnsAndFirewallDeployment'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('{0}-global-dns', variables('name'))), 'Microsoft.Resources/deployments', 'globalDnsZones'), '2019-10-01').outputs.privateDnsZoneIdPurview.value, parameters('privateDnsZoneIdPurview'))]"
+            },
+            "privateDnsZoneIdPurviewPortal": {
+              "value": "[if(parameters('enableDnsAndFirewallDeployment'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('{0}-global-dns', variables('name'))), 'Microsoft.Resources/deployments', 'globalDnsZones'), '2019-10-01').outputs.privateDnsZoneIdPurviewPortal.value, parameters('privateDnsZoneIdPurviewPortal'))]"
+            },
             "privateDnsZoneIdStorageBlob": {
               "value": "[if(parameters('enableDnsAndFirewallDeployment'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('{0}-global-dns', variables('name'))), 'Microsoft.Resources/deployments', 'globalDnsZones'), '2019-10-01').outputs.privateDnsZoneIdBlob.value, parameters('privateDnsZoneIdBlob'))]"
             },
@@ -2041,6 +2071,14 @@
               "subnetId": {
                 "type": "string"
               },
+              "privateDnsZoneIdPurview": {
+                "type": "string",
+                "defaultValue": ""
+              },
+              "privateDnsZoneIdPurviewPortal": {
+                "type": "string",
+                "defaultValue": ""
+              },
               "privateDnsZoneIdStorageBlob": {
                 "type": "string",
                 "defaultValue": ""
@@ -2060,9 +2098,376 @@
             },
             "functions": [],
             "variables": {
+              "purview001Name": "[format('{0}-purview001', parameters('prefix'))]",
               "keyvault001Name": "[format('{0}-vault001', parameters('prefix'))]"
             },
             "resources": [
+              {
+                "type": "Microsoft.Resources/deployments",
+                "apiVersion": "2019-10-01",
+                "name": "purview001",
+                "properties": {
+                  "expressionEvaluationOptions": {
+                    "scope": "inner"
+                  },
+                  "mode": "Incremental",
+                  "parameters": {
+                    "location": {
+                      "value": "[parameters('location')]"
+                    },
+                    "tags": {
+                      "value": "[parameters('tags')]"
+                    },
+                    "subnetId": {
+                      "value": "[parameters('subnetId')]"
+                    },
+                    "purviewName": {
+                      "value": "[variables('purview001Name')]"
+                    },
+                    "privateDnsZoneIdPurview": {
+                      "value": "[parameters('privateDnsZoneIdPurview')]"
+                    },
+                    "privateDnsZoneIdPurviewPortal": {
+                      "value": "[parameters('privateDnsZoneIdPurviewPortal')]"
+                    },
+                    "privateDnsZoneIdStorageBlob": {
+                      "value": "[parameters('privateDnsZoneIdStorageBlob')]"
+                    },
+                    "privateDnsZoneIdStorageQueue": {
+                      "value": "[parameters('privateDnsZoneIdStorageQueue')]"
+                    },
+                    "privateDnsZoneIdEventhubNamespace": {
+                      "value": "[parameters('privateDnsZoneIdEventhubNamespace')]"
+                    }
+                  },
+                  "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "metadata": {
+                      "_generator": {
+                        "name": "bicep",
+                        "version": "0.4.613.9944",
+                        "templateHash": "9950942984261810285"
+                      }
+                    },
+                    "parameters": {
+                      "location": {
+                        "type": "string"
+                      },
+                      "tags": {
+                        "type": "object"
+                      },
+                      "subnetId": {
+                        "type": "string"
+                      },
+                      "purviewName": {
+                        "type": "string"
+                      },
+                      "privateDnsZoneIdPurview": {
+                        "type": "string"
+                      },
+                      "privateDnsZoneIdPurviewPortal": {
+                        "type": "string"
+                      },
+                      "privateDnsZoneIdStorageBlob": {
+                        "type": "string"
+                      },
+                      "privateDnsZoneIdStorageQueue": {
+                        "type": "string"
+                      },
+                      "privateDnsZoneIdEventhubNamespace": {
+                        "type": "string"
+                      }
+                    },
+                    "functions": [],
+                    "variables": {
+                      "purviewPrivateEndpointNamePortal": "[format('{0}-portal-private-endpoint', parameters('purviewName'))]",
+                      "purviewPrivateEndpointNameAccount": "[format('{0}-account-private-endpoint', parameters('purviewName'))]",
+                      "purviewPrivateEndpointNameBlob": "[format('{0}-private-endpoint-blob', parameters('purviewName'))]",
+                      "purviewPrivateEndpointNameQueue": "[format('{0}-private-endpoint-queue', parameters('purviewName'))]",
+                      "purviewPrivateEndpointNameNamespace": "[format('{0}-private-endpoint-namespace', parameters('purviewName'))]",
+                      "purviewRegions": [
+                        "australiaeast",
+                        "brazilsouth",
+                        "canadacentral",
+                        "centralindia",
+                        "eastus",
+                        "eastus2",
+                        "northeurope",
+                        "southcentralus",
+                        "southeastasia",
+                        "uksouth",
+                        "westcentralus",
+                        "westeurope",
+                        "westus2"
+                      ]
+                    },
+                    "resources": [
+                      {
+                        "type": "Microsoft.Purview/accounts",
+                        "apiVersion": "2021-07-01",
+                        "name": "[parameters('purviewName')]",
+                        "location": "[if(contains(variables('purviewRegions'), parameters('location')), parameters('location'), 'westeurope')]",
+                        "tags": "[parameters('tags')]",
+                        "identity": {
+                          "type": "SystemAssigned"
+                        },
+                        "sku": {
+                          "name": "Standard",
+                          "capacity": 1
+                        },
+                        "properties": {
+                          "cloudConnectors": {},
+                          "friendlyName": "[parameters('purviewName')]",
+                          "managedResourceGroupName": "[parameters('purviewName')]",
+                          "publicNetworkAccess": "Disabled"
+                        }
+                      },
+                      {
+                        "type": "Microsoft.Network/privateEndpoints",
+                        "apiVersion": "2020-11-01",
+                        "name": "[variables('purviewPrivateEndpointNamePortal')]",
+                        "location": "[parameters('location')]",
+                        "tags": "[parameters('tags')]",
+                        "properties": {
+                          "manualPrivateLinkServiceConnections": [],
+                          "privateLinkServiceConnections": [
+                            {
+                              "name": "[variables('purviewPrivateEndpointNamePortal')]",
+                              "properties": {
+                                "groupIds": [
+                                  "portal"
+                                ],
+                                "privateLinkServiceId": "[resourceId('Microsoft.Purview/accounts', parameters('purviewName'))]",
+                                "requestMessage": ""
+                              }
+                            }
+                          ],
+                          "subnet": {
+                            "id": "[parameters('subnetId')]"
+                          }
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Purview/accounts', parameters('purviewName'))]"
+                        ]
+                      },
+                      {
+                        "condition": "[not(empty(parameters('privateDnsZoneIdPurviewPortal')))]",
+                        "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                        "apiVersion": "2020-11-01",
+                        "name": "[format('{0}/{1}', variables('purviewPrivateEndpointNamePortal'), 'default')]",
+                        "properties": {
+                          "privateDnsZoneConfigs": [
+                            {
+                              "name": "[format('{0}-arecord', variables('purviewPrivateEndpointNamePortal'))]",
+                              "properties": {
+                                "privateDnsZoneId": "[parameters('privateDnsZoneIdPurviewPortal')]"
+                              }
+                            }
+                          ]
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Network/privateEndpoints', variables('purviewPrivateEndpointNamePortal'))]"
+                        ]
+                      },
+                      {
+                        "type": "Microsoft.Network/privateEndpoints",
+                        "apiVersion": "2020-11-01",
+                        "name": "[variables('purviewPrivateEndpointNameAccount')]",
+                        "location": "[parameters('location')]",
+                        "tags": "[parameters('tags')]",
+                        "properties": {
+                          "manualPrivateLinkServiceConnections": [],
+                          "privateLinkServiceConnections": [
+                            {
+                              "name": "[variables('purviewPrivateEndpointNameAccount')]",
+                              "properties": {
+                                "groupIds": [
+                                  "account"
+                                ],
+                                "privateLinkServiceId": "[resourceId('Microsoft.Purview/accounts', parameters('purviewName'))]",
+                                "requestMessage": ""
+                              }
+                            }
+                          ],
+                          "subnet": {
+                            "id": "[parameters('subnetId')]"
+                          }
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Purview/accounts', parameters('purviewName'))]"
+                        ]
+                      },
+                      {
+                        "condition": "[not(empty(parameters('privateDnsZoneIdPurview')))]",
+                        "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                        "apiVersion": "2020-11-01",
+                        "name": "[format('{0}/{1}', variables('purviewPrivateEndpointNameAccount'), 'default')]",
+                        "properties": {
+                          "privateDnsZoneConfigs": [
+                            {
+                              "name": "[format('{0}-arecord', variables('purviewPrivateEndpointNameAccount'))]",
+                              "properties": {
+                                "privateDnsZoneId": "[parameters('privateDnsZoneIdPurview')]"
+                              }
+                            }
+                          ]
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Network/privateEndpoints', variables('purviewPrivateEndpointNameAccount'))]"
+                        ]
+                      },
+                      {
+                        "type": "Microsoft.Network/privateEndpoints",
+                        "apiVersion": "2020-11-01",
+                        "name": "[variables('purviewPrivateEndpointNameBlob')]",
+                        "location": "[parameters('location')]",
+                        "tags": "[parameters('tags')]",
+                        "properties": {
+                          "manualPrivateLinkServiceConnections": [],
+                          "privateLinkServiceConnections": [
+                            {
+                              "name": "[variables('purviewPrivateEndpointNameBlob')]",
+                              "properties": {
+                                "groupIds": [
+                                  "blob"
+                                ],
+                                "privateLinkServiceId": "[reference(resourceId('Microsoft.Purview/accounts', parameters('purviewName'))).managedResources.storageAccount]",
+                                "requestMessage": ""
+                              }
+                            }
+                          ],
+                          "subnet": {
+                            "id": "[parameters('subnetId')]"
+                          }
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Purview/accounts', parameters('purviewName'))]"
+                        ]
+                      },
+                      {
+                        "condition": "[not(empty(parameters('privateDnsZoneIdStorageBlob')))]",
+                        "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                        "apiVersion": "2020-11-01",
+                        "name": "[format('{0}/{1}', variables('purviewPrivateEndpointNameBlob'), 'default')]",
+                        "properties": {
+                          "privateDnsZoneConfigs": [
+                            {
+                              "name": "[format('{0}-arecord', variables('purviewPrivateEndpointNameBlob'))]",
+                              "properties": {
+                                "privateDnsZoneId": "[parameters('privateDnsZoneIdStorageBlob')]"
+                              }
+                            }
+                          ]
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Network/privateEndpoints', variables('purviewPrivateEndpointNameBlob'))]"
+                        ]
+                      },
+                      {
+                        "type": "Microsoft.Network/privateEndpoints",
+                        "apiVersion": "2020-11-01",
+                        "name": "[variables('purviewPrivateEndpointNameQueue')]",
+                        "location": "[parameters('location')]",
+                        "tags": "[parameters('tags')]",
+                        "properties": {
+                          "manualPrivateLinkServiceConnections": [],
+                          "privateLinkServiceConnections": [
+                            {
+                              "name": "[variables('purviewPrivateEndpointNameQueue')]",
+                              "properties": {
+                                "groupIds": [
+                                  "queue"
+                                ],
+                                "privateLinkServiceId": "[reference(resourceId('Microsoft.Purview/accounts', parameters('purviewName'))).managedResources.storageAccount]",
+                                "requestMessage": ""
+                              }
+                            }
+                          ],
+                          "subnet": {
+                            "id": "[parameters('subnetId')]"
+                          }
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Purview/accounts', parameters('purviewName'))]"
+                        ]
+                      },
+                      {
+                        "condition": "[not(empty(parameters('privateDnsZoneIdStorageQueue')))]",
+                        "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                        "apiVersion": "2020-11-01",
+                        "name": "[format('{0}/{1}', variables('purviewPrivateEndpointNameQueue'), 'default')]",
+                        "properties": {
+                          "privateDnsZoneConfigs": [
+                            {
+                              "name": "[format('{0}-arecord', variables('purviewPrivateEndpointNameQueue'))]",
+                              "properties": {
+                                "privateDnsZoneId": "[parameters('privateDnsZoneIdStorageQueue')]"
+                              }
+                            }
+                          ]
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Network/privateEndpoints', variables('purviewPrivateEndpointNameQueue'))]"
+                        ]
+                      },
+                      {
+                        "type": "Microsoft.Network/privateEndpoints",
+                        "apiVersion": "2020-11-01",
+                        "name": "[variables('purviewPrivateEndpointNameNamespace')]",
+                        "location": "[parameters('location')]",
+                        "tags": "[parameters('tags')]",
+                        "properties": {
+                          "manualPrivateLinkServiceConnections": [],
+                          "privateLinkServiceConnections": [
+                            {
+                              "name": "[variables('purviewPrivateEndpointNameNamespace')]",
+                              "properties": {
+                                "groupIds": [
+                                  "namespace"
+                                ],
+                                "privateLinkServiceId": "[reference(resourceId('Microsoft.Purview/accounts', parameters('purviewName'))).managedResources.eventHubNamespace]",
+                                "requestMessage": ""
+                              }
+                            }
+                          ],
+                          "subnet": {
+                            "id": "[parameters('subnetId')]"
+                          }
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Purview/accounts', parameters('purviewName'))]"
+                        ]
+                      },
+                      {
+                        "condition": "[not(empty(parameters('privateDnsZoneIdEventhubNamespace')))]",
+                        "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                        "apiVersion": "2020-11-01",
+                        "name": "[format('{0}/{1}', variables('purviewPrivateEndpointNameNamespace'), 'default')]",
+                        "properties": {
+                          "privateDnsZoneConfigs": [
+                            {
+                              "name": "[format('{0}-arecord', variables('purviewPrivateEndpointNameNamespace'))]",
+                              "properties": {
+                                "privateDnsZoneId": "[parameters('privateDnsZoneIdEventhubNamespace')]"
+                              }
+                            }
+                          ]
+                        },
+                        "dependsOn": [
+                          "[resourceId('Microsoft.Network/privateEndpoints', variables('purviewPrivateEndpointNameNamespace'))]"
+                        ]
+                      }
+                    ],
+                    "outputs": {
+                      "purviewId": {
+                        "type": "string",
+                        "value": "[resourceId('Microsoft.Purview/accounts', parameters('purviewName'))]"
+                      }
+                    }
+                  }
+                }
+              },
               {
                 "type": "Microsoft.Resources/deployments",
                 "apiVersion": "2019-10-01",
@@ -2207,8 +2612,76 @@
                     }
                   }
                 }
+              },
+              {
+                "type": "Microsoft.Resources/deployments",
+                "apiVersion": "2019-10-01",
+                "name": "purviewKeyVaultRoleAssignment",
+                "properties": {
+                  "expressionEvaluationOptions": {
+                    "scope": "inner"
+                  },
+                  "mode": "Incremental",
+                  "parameters": {
+                    "purviewId": {
+                      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'purview001'), '2019-10-01').outputs.purviewId.value]"
+                    },
+                    "keyVaultId": {
+                      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVault001'), '2019-10-01').outputs.keyvaultId.value]"
+                    }
+                  },
+                  "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "metadata": {
+                      "_generator": {
+                        "name": "bicep",
+                        "version": "0.4.613.9944",
+                        "templateHash": "9549520977106992190"
+                      }
+                    },
+                    "parameters": {
+                      "purviewId": {
+                        "type": "string"
+                      },
+                      "keyVaultId": {
+                        "type": "string"
+                      }
+                    },
+                    "functions": [],
+                    "variables": {
+                      "keyVaultName": "[if(greaterOrEquals(length(split(parameters('keyVaultId'), '/')), 9), last(split(parameters('keyVaultId'), '/')), 'incorrectSegmentLength')]",
+                      "purviewSubscriptionId": "[if(greaterOrEquals(length(split(parameters('purviewId'), '/')), 9), split(parameters('purviewId'), '/')[2], subscription().subscriptionId)]",
+                      "purviewResourceGroupName": "[if(greaterOrEquals(length(split(parameters('purviewId'), '/')), 9), split(parameters('purviewId'), '/')[4], resourceGroup().name)]",
+                      "purviewName": "[if(greaterOrEquals(length(split(parameters('purviewId'), '/')), 9), last(split(parameters('purviewId'), '/')), 'incorrectSegmentLength')]"
+                    },
+                    "resources": [
+                      {
+                        "type": "Microsoft.Authorization/roleAssignments",
+                        "apiVersion": "2020-04-01-preview",
+                        "scope": "[format('Microsoft.KeyVault/vaults/{0}', variables('keyVaultName'))]",
+                        "name": "[guid(uniqueString(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', variables('purviewSubscriptionId'), variables('purviewResourceGroupName')), 'Microsoft.Purview/accounts', variables('purviewName'))))]",
+                        "properties": {
+                          "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
+                          "principalId": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', variables('purviewSubscriptionId'), variables('purviewResourceGroupName')), 'Microsoft.Purview/accounts', variables('purviewName')), '2020-12-01-preview', 'full').identity.principalId]",
+                          "principalType": "ServicePrincipal"
+                        }
+                      }
+                    ]
+                  }
+                },
+                "dependsOn": [
+                  "[resourceId('Microsoft.Resources/deployments', 'keyVault001')]",
+                  "[resourceId('Microsoft.Resources/deployments', 'purview001')]"
+                ]
               }
-            ]
+            ],
+            "outputs": {
+              "purviewId": {
+                "type": "string",
+                "value": "[reference(resourceId('Microsoft.Resources/deployments', 'purview001'), '2019-10-01').outputs.purviewId.value]"
+              }
+            }
           }
         },
         "dependsOn": [
@@ -2653,6 +3126,10 @@
       "firewallPrivateIp": {
         "type": "string",
         "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('{0}-network', variables('name'))), 'Microsoft.Resources/deployments', 'networkServices'), '2019-10-01').outputs.firewallPrivateIp.value]"
+      },
+      "purviewId": {
+        "type": "string",
+        "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('{0}-governance', variables('name'))), 'Microsoft.Resources/deployments', 'governanceResources'), '2019-10-01').outputs.purviewId.value]"
       },
       "privateDnsZoneIdKeyVault": {
         "type": "string",
